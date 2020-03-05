@@ -50,15 +50,15 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 
 # split a multivariate sequence into samples
 def split_sequences(features, labels, n_steps):
-        """
-        Split the feature and labels series in batches.
-        Arguments:
-            features: Features as NumPy array.
-            labels: Labels as Numpy array.
-            n_steps: Number o timesteps inside a batch.
-        Returns:
-            Resampled features and labels array.
-        """
+    """
+    Split the feature and labels series in batches.
+    Arguments:
+        features: Features as NumPy array.
+        labels: Labels as Numpy array.
+        n_steps: Number o timesteps inside a batch.
+    Returns:
+        Resampled features and labels array.
+    """
     X, y = list(), list()
     assert len(features)==len(labels), "Features and labels lenght must be the same!"
     for i in range(len(features)):
@@ -74,14 +74,14 @@ def split_sequences(features, labels, n_steps):
     return np.array(X), np.array(y)
 
 def invertScale(batchs_array, scaler):
-        """
-        Invert the scaled data, can be one or more batches.
-        Arguments:
-            batchs_array: NumPy array to be inverted.
-            scaler: Scaler object fitted into the original data.
-        Returns:
-            Numpy array with the inverted values.
-        """
+    """
+    Invert the scaled data, can be one or more batches.
+    Arguments:
+        batchs_array: NumPy array to be inverted.
+        scaler: Scaler object fitted into the original data.
+    Returns:
+        Numpy array with the inverted values.
+    """
     if len(batchs_array.shape) == 3:
         inverted = []
         for i in range(batchs_array.shape[1]):
@@ -212,7 +212,7 @@ def Mahala_distantce(x,mean,cov):
 def fit_lstm(feat, label, testSize, n_neurons, loss, optimizer, activation, n_epoch):
 
     model = Sequential()
-    model.add(LSTM(n_neurons, activation='relu', input_shape=(feat.shape[1], feat.shape[2])))
+    model.add(LSTM(n_neurons, activation=activation, input_shape=(feat.shape[1], feat.shape[2])))
     model.add(Dense(label.shape[1]))
     model.compile(loss=loss, optimizer=optimizer)
     # simple early stopping
@@ -224,12 +224,15 @@ def fit_lstm(feat, label, testSize, n_neurons, loss, optimizer, activation, n_ep
     plt.plot(history.history['val_loss'], label='test')
     plt.legend()
     plt.show()
-    return model
+    return model, history
 
-def make_predictions(model, features, scaler):
+def make_predictions(model, features, scaler=None):
     preds = []
     for t in range(features.shape[0]):
-        pred = invertScale(model.predict(features[t].reshape(1,features[-1].shape[0],features[-1].shape[1])),\
+        if scaler is None:
+            pred = model.predict(features[t].reshape(1,features[t].shape[0],features[t].shape[1]))
+        else:
+            pred = invertScale(model.predict(features[t].reshape(1,features[t].shape[0],features[t].shape[1])),\
                                    scaler)
         preds.append(pred)
     preds = np.array(preds)

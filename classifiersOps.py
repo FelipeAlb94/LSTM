@@ -1,4 +1,4 @@
-def preprocessing_Multiclass(df, labelName, dismissCols=[], dummies=False, scale=False):
+def preprocessing_Multiclass(df, labelName, dismissCols=[], dummies=False, scale=False, scaler=None, labelEncoder=None):
     """
     Separate features and encoded labels from DataFrame.
     Arguments:
@@ -20,24 +20,27 @@ def preprocessing_Multiclass(df, labelName, dismissCols=[], dummies=False, scale
     if not scale:
         features = df.drop(dismissCols+labelName, axis=1).values
     else:
-        scaler = MinMaxScaler()
+        if scaler is None:
+            scaler = MinMaxScaler()
         features = scaler.fit_transform(df.drop(dismissCols+labelName, axis=1).values)
 
     if not dummies:
-        labelEncoder = LabelEncoder()
+        if labelEncoder is None:
+            labelEncoder = LabelEncoder()
         labels = labelEncoder.fit_transform(ravel(df[labelName]))
 
     else:
         labels = get_dummies(df[labelName]).values
+        labelColumns = get_dummies(df[labelName]).columns.to_list()
 
     if not dummies and not scale:
         return features, labels, labelEncoder
     elif not dummies and scale:
         return features, labels, labelEncoder, scaler
     elif dummies and not scale:
-        return features, labels
+        return features, labels, labelColumns
     elif dummies and scale:
-        return features, labels, scaler
+        return features, labels, labelColumns, scaler
 
 def XGB_timeSeries_multiClass(features, labels, n_classes, n_split, returnModel=False, resultsAsDict=False):
     """

@@ -209,15 +209,15 @@ def Mahala_distantce(x,mean,cov):
     d = np.dot(d, (x-mean).T)
     return d
 
-def fit_lstm(feat, label, testSize, n_neurons, loss, optimizer, activation, n_epoch):
+def fit_lstm(feat, label, x_test, y_test, n_neurons, loss, optimizer, activation, n_epoch):
 
     model = Sequential()
     model.add(LSTM(n_neurons, activation=activation, input_shape=(feat.shape[1], feat.shape[2])))
-    model.add(Dense(label.shape[1]))
+    model.add(Dense(label.shape[1], activation=activation))
     model.compile(loss=loss, optimizer=optimizer)
     # simple early stopping
     es = EarlyStopping(monitor='val_loss', mode='min', verbose=1)
-    history = model.fit(feat, label, epochs=n_epoch, verbose=2, validation_split=testSize, \
+    history = model.fit(feat, label, epochs=n_epoch, verbose=2, validation_data=(x_test, y_test), \
                         shuffle=False, callbacks=[es])
     # plot history
     plt.plot(history.history['loss'], label='train')
@@ -226,14 +226,18 @@ def fit_lstm(feat, label, testSize, n_neurons, loss, optimizer, activation, n_ep
     plt.show()
     return model, history
 
-def make_predictions(model, features, scaler=None):
+def make_predictions(model, features, scaler=None, pred_classes=False):
     preds = []
     for t in range(features.shape[0]):
-        if scaler is None:
-            pred = model.predict(features[t].reshape(1,features[t].shape[0],features[t].shape[1]))
+        if not pred_classes:
+            if scaler is None:
+                pred = model.predict(features[t].reshape(1,features[t].shape[0],features[t].shape[1]))
+            else:
+                pred = invertScale(model.predict(features[t].reshape(1,features[t].shape[0],features[t].shape[1])),\
+                                       scaler)
         else:
-            pred = invertScale(model.predict(features[t].reshape(1,features[t].shape[0],features[t].shape[1])),\
-                                   scaler)
+            pred = np.array(model.predict_classes(features[t].reshape(1,features[t].shape[0],features[t].shape[1])))
+
         preds.append(pred)
     preds = np.array(preds)
     preds = preds.reshape(preds.shape[0],preds.shape[2])
